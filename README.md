@@ -450,6 +450,3 @@ This project is licensed under the MIT License.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Merge Request
 
-## 📧 Contact
-
-For questions or support, please open an issue on GitLab.
