@@ -1,0 +1,81 @@
+# .gitlab-ci.yml - GitLab CI/CD Pipeline
+
+stages:
+  - build
+  - test
+  - package
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  DOCKER_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .m2/repository/
+  policy: pull-push
+
+build:
+  stage: build
+  image: maven:3.9-eclipse-temurin-17-alpine
+  script:
+    - ./mvnw clean compile
+  artifacts:
+    paths:
+      - target/
+    expire_in: 1 hour
+
+test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-17-alpine
+  services:
+    - name: postgres:15
+      alias: postgres
+  variables:
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/test_db
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: postgres
+    JWT_SECRET: test-secret-key-for-ci-pipeline-minimum-32-chars
+  script:
+    - ./mvnw test
+  coverage: '/Coverage: \d+\.\d+/'
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-*.xml
+
+package:
+  stage: package
+  image: maven:3.9-eclipse-temurin-17-alpine
+  script:
+    - ./mvnw package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
+
+docker-build:
+  stage: package
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker build -t $DOCKER_IMAGE .
+    - docker push $DOCKER_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying application..."
+    # Add your deployment commands here
+    # Examples: docker-compose pull && docker-compose up -d
+    # Or: kubectl apply -f k8s/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  environment:
+    name: production

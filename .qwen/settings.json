@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn *)",
+      "Bash(mkdir *)",
+      "Bash(del *)"
+    ]
+  },
+  "$version": 3
+}
