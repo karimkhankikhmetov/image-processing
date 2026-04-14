@@ -1,3 +1,4 @@
+project for https://roadmap.sh/projects/image-processing-service
 # Image Processing Service
 
 A RESTful microservice for uploading, managing, and serving images with JWT-based authentication. Built with Spring Boot 4, PostgreSQL, and Spring Security.
